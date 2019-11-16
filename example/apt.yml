@@ -1,0 +1,12 @@
+apt-get:
+  check: "apt-get -h"
+apt-update:
+  comment: "Ensure the package cache is up to date."
+  install: "apt-get update -y"
+  build_only: true
+  deps:
+    - apt-get
+apt:
+  deps:
+    - apt-get
+    - apt-update

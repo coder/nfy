@@ -1,0 +1,15 @@
+import:
+  - "apt.yml"
+htop:
+  install: "apt-get install -y htop"
+  check: "htop -h"
+  deps:
+    - apt
+wget:
+  install: "apt-get install -y wget"
+  check: "wget -h"
+  deps:
+    - apt
+vim:
+  deps:
+    - github.com/cdr/nfy@exp:vim
