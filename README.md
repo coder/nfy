@@ -3,11 +3,12 @@
 `nfy` is an **experimental** configuration management that aims to u**n**i**fy** the concept of the `Dockerfile`,
 the install script, and the configuration manager.
 
-You can think of it as a bridge between the worlds of bare metal machines and containers.
+You can think of it as a bridge between bare metal configuration and containers.
 
 There are no compatibility or reliability guarantees until we're v1.0.0.
 
 ## Introduction
+
 ### The Problem
 1. **Dockerfiles don't scale.**
     1. As Dockerfiles become large, developers begin moving installation to scripts and installers, undermining layer caching.
@@ -19,8 +20,8 @@ There are no compatibility or reliability guarantees until we're v1.0.0.
         1. If you want an image with `go` and `rust`, you use one as your `FROM`, and write
         `RUN` statements to simulate what the image already does.
 1. **Dockerfiles can't be applied to the local system.**
-    1. Developers prefer long-lived, bare metal machines, and thus install software locally differently than they build
-    server images.
+    1. Development workstations are long-lived and bare metal, where production servers are ephemeral and containerized.
+    Software management diverges greatly between the two.
     
 ### The Goal
 1. **Containerization**
