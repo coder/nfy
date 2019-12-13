@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/spf13/pflag"
 	"go.coder.com/cli"
@@ -14,6 +15,8 @@ import (
 )
 
 type buildCmd struct {
+	ctx context.Context
+
 	targets    []string
 	base       string
 	dockerFile bool
@@ -45,7 +48,7 @@ func (a *buildCmd) Run(fl *pflag.FlagSet) {
 	}
 
 	graphIndex := localGraph(a.targets)
-	dfile, err := builder.Dockerfile(a.base, graphIndex)
+	dfile, err := builder.Dockerfile(a.ctx, a.base, graphIndex)
 	if err != nil {
 		clog.Fatal("dockerfile build failed: %+v", err)
 	}

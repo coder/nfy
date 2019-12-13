@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"context"
 	"fmt"
 	"go.coder.com/nfy/internal/runner"
 	"sort"
@@ -35,9 +36,9 @@ func (r RecipeIndex) sortedSlice() []Recipe {
 }
 
 // Traverse traverses all recipes in the graph. It will only present recipes that it has presented all dependencies for.
-func (r RecipeIndex) Traverse(fn TraverseFn) error {
+func (r RecipeIndex) Traverse(ctx context.Context, fn TraverseFn) error {
 	for _, r := range r {
-		err := r.Traverse(fn)
+		err := r.Traverse(ctx, fn)
 		if err != nil {
 			return err
 		}
@@ -48,13 +49,13 @@ func (r RecipeIndex) Traverse(fn TraverseFn) error {
 // Traverse calls fn for each recipe in it's graph until fn returns false or there are no more entries.
 // Traverse is depth-first.
 // It is eventually called against the Recipe itself.
-func (r Recipe) Traverse(fn TraverseFn) error {
+func (r Recipe) Traverse(ctx context.Context, fn TraverseFn) error {
 	for _, dep := range r.Dependencies {
-		r, err := dep.Load()
+		r, err := dep.Load(ctx)
 		if err != nil {
 			return fmt.Errorf("%s: %w", dep.Name(), err)
 		}
-		err = r.Traverse(fn)
+		err = r.Traverse(ctx, fn)
 		if err != nil {
 			return fmt.Errorf("%s: %w", dep.Name(), err)
 		}

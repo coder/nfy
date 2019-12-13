@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"github.com/fatih/color"
 	"github.com/spf13/pflag"
 	"go.coder.com/cli"
@@ -15,6 +16,8 @@ import (
 )
 
 type installCmd struct {
+	ctx context.Context
+
 	showOutput bool
 	targets    []string
 }
@@ -80,6 +83,7 @@ func (a installCmd) Run(fl *pflag.FlagSet) {
 
 	graphIndex := localGraph(a.targets)
 	err := graphIndex.Traverse(
+		a.ctx,
 		graph.TraverseOnce(
 			func(r runner.Recipe) error {
 				totalCounter++

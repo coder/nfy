@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"context"
 	"fmt"
 	"go.coder.com/nfy/internal/clog"
 	"go.coder.com/nfy/internal/lockfile"
@@ -17,7 +18,7 @@ import (
 // RecipeLoader implements a recipe graph where some
 // recipes may not be loaded yet.
 type RecipeLoader interface {
-	Load() (*Recipe, error)
+	Load(ctx context.Context) (*Recipe, error)
 	Name() string
 }
 
@@ -38,7 +39,7 @@ func (l *localLoader) Name() string {
 	return l.name
 }
 
-func (l *localLoader) Load() (*Recipe, error) {
+func (l *localLoader) Load(_ context.Context) (*Recipe, error) {
 	r, ok := l.ind[l.name]
 	if !ok {
 		return nil, fmt.Errorf("%s -> %s: %q not found locally", l.parent, l.name, l.name)
@@ -81,7 +82,7 @@ func (l *remoteLoader) lock() (func(), error) {
 	}, nil
 }
 
-func (l *remoteLoader) Load() (*Recipe, error) {
+func (l *remoteLoader) Load(ctx context.Context) (*Recipe, error) {
 	unlock, err := l.lock()
 	if err != nil {
 		return nil, err
@@ -99,7 +100,7 @@ func (l *remoteLoader) Load() (*Recipe, error) {
 	}
 
 	clog.Info("cloning %v", l.raw)
-	cmd := exec.Command("git", "clone",
+	cmd := exec.CommandContext(ctx, "git", "clone",
 		"--depth", "1",
 		"-b", l.target.Tag,
 		"https://"+l.target.Repo, ".",
