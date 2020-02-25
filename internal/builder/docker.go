@@ -23,10 +23,10 @@ func Dockerfile(ctx context.Context, base string, grp graph.RecipeIndex) (string
 		} else if r.Recipe.Install != "" {
 			fmt.Fprintf(&file, "RUN %s\n", r.Recipe.Install)
 		}
-        return nil
+		return nil
 	}))
 	if err != nil {
-        return "", fmt.Errorf("traverse failed: %w", err)
+		return "", fmt.Errorf("traverse failed: %w", err)
 	}
 	return file.String(), nil
 }

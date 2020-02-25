@@ -112,8 +112,6 @@ func (a installCmd) Run(fl *pflag.FlagSet) {
 						clog.Info("%s\tcheck succeeded (%v)", prefix, time.Since(start))
 						return nil
 					}
-				} else {
-					clog.Warn("%s\tno check, always reinstalling", prefix)
 				}
 
 				err := r.Install(out)
@@ -121,7 +119,11 @@ func (a installCmd) Run(fl *pflag.FlagSet) {
 					outBuf.WriteTo(os.Stdout)
 					clog.Fatal("%s\tinstall failed: %v (%v)", prefix, err, time.Since(start))
 				}
-				clog.Success("%s\tinstalled (%v)", prefix, time.Since(start))
+				var noCheckMessage string
+				if r.Recipe.Check == "" {
+					noCheckMessage = "no check, "
+				}
+				clog.Success("%s\t%sinstalled (%v)", prefix, noCheckMessage, time.Since(start))
 				if a.showOutput {
 					clog.Info("%s\t --- begin install output")
 					outBuf.WriteTo(os.Stdout)

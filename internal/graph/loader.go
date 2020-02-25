@@ -3,16 +3,17 @@ package graph
 import (
 	"context"
 	"fmt"
-	"go.coder.com/nfy/internal/clog"
-	"go.coder.com/nfy/internal/lockfile"
-	"go.coder.com/nfy/internal/parse"
-	"go.coder.com/nfy/internal/runner"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"go.coder.com/nfy/internal/clog"
+	"go.coder.com/nfy/internal/lockfile"
+	"go.coder.com/nfy/internal/parse"
+	"go.coder.com/nfy/internal/runner"
 )
 
 // RecipeLoader implements a recipe graph where some
