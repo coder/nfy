@@ -16,8 +16,8 @@
     - [Import Statements](#import-statements)
   - [Dependencies](#dependencies)
     - [Target Evaluation](#target-evaluation)
-    - [Overloaded Target](#overloaded-target)
-      - [Same File](#same-file)
+    - [Target Overloading](#target-overloading)
+      - [Use Cases](#use-cases)
     - [Locking](#locking)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -238,7 +238,7 @@ A target can be provided in one of three formats:
 - `wget` references a local target somewhere in the source tree
 - `github.com/user/repo:wget` references a remote target named `wget` hosted on git.
 
-### Overloaded Target
+### Target Overloading
 What if you want to install `htop` in your Macbook or Linux server?
 
 ```yaml
@@ -253,7 +253,6 @@ will obviously fail because apt-get is not installed. Instead, you should _overl
 installs. For example:
 
 ```yaml
-# apt-tools.yml
 htop:
     check: "htop -h"
     install_apt:  "apt-get install -h htop"
@@ -268,10 +267,10 @@ We cannot simply provide multiple `install` directives because it is illegal YAM
 
 The suffix is nice for debugging nfy execution, too.
 
-#### Same File
+#### Use Cases
 
-The YAML Spec forbids duplicate keys in the same file
-
+- Targetting multiple operating systems
+- Tolerating different dependencies (e.g using "curl" instead of "wget")
 
 ### Locking
 
