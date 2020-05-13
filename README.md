@@ -9,7 +9,7 @@ There are no compatibility or reliability guarantees until we're v1.0.0.
 
 ## Install
 ```
-go get cdr.dev/nfy
+go get -u cdr.dev/nfy/cmd/nfy
 ```
 
 ## Introduction
