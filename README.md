@@ -7,6 +7,11 @@ You can think of it as a bridge between bare metal configuration and containers.
 
 There are no compatibility or reliability guarantees until we're v1.0.0.
 
+## Install
+```
+go get cdr.dev/nfy
+```
+
 ## Introduction
 
 ### The Problem
