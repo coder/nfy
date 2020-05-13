@@ -2,7 +2,7 @@ package graph
 
 import (
 	"fmt"
-	"go.coder.com/nfy/internal/runner"
+	"cdr.dev/nfy/internal/runner"
 	"strings"
 )
 

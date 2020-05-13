@@ -3,8 +3,8 @@ package builder
 import (
 	"context"
 	"fmt"
-	"go.coder.com/nfy/internal/graph"
-	"go.coder.com/nfy/internal/runner"
+	"cdr.dev/nfy/internal/graph"
+	"cdr.dev/nfy/internal/runner"
 	"strings"
 )
 

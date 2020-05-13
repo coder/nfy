@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/spf13/pflag"
 	"go.coder.com/cli"
-	"go.coder.com/nfy/internal/clog"
+	"cdr.dev/nfy/internal/clog"
 	"os"
 	"os/signal"
 )

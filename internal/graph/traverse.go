@@ -3,7 +3,7 @@ package graph
 import (
 	"context"
 	"fmt"
-	"go.coder.com/nfy/internal/runner"
+	"cdr.dev/nfy/internal/runner"
 	"sort"
 )
 

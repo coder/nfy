@@ -2,7 +2,7 @@ package runner
 
 import (
 	"fmt"
-	"go.coder.com/nfy/internal/parse"
+	"cdr.dev/nfy/internal/parse"
 	"io"
 	"os/exec"
 )

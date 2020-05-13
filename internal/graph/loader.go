@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"go.coder.com/nfy/internal/clog"
-	"go.coder.com/nfy/internal/lockfile"
-	"go.coder.com/nfy/internal/parse"
-	"go.coder.com/nfy/internal/runner"
+	"cdr.dev/nfy/internal/clog"
+	"cdr.dev/nfy/internal/lockfile"
+	"cdr.dev/nfy/internal/parse"
+	"cdr.dev/nfy/internal/runner"
 )
 
 // RecipeLoader implements a recipe graph where some
