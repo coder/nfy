@@ -1,2 +1,2 @@
 import:
-  - "example/nfy.yml"
+  - "example/*.yml"

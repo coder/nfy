@@ -218,7 +218,12 @@ htop:
 
 Every import is processed before recipe evaluation begins.
 
-_Note: Globbing isn't supported because import order is important._
+You can also import entire directories via globbing. For example:
+
+```yaml
+import:
+    - "nfy/*.yml"
+```
 
 ## Dependencies
 Dependencies can exist on a per recipe and per file basis. Dependencies on a file are automatically added to each
