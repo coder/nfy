@@ -208,15 +208,23 @@ func Traverse(recipes *[]Recipe, path string) error {
 	*recipes = append(*recipes, res.Recipes...)
 
 	for _, im := range res.Imports {
-		err = Traverse(recipes,
-			filepath.Join(
-				filepath.Dir(path),
-				im,
-			),
+		fullPath := filepath.Join(
+			filepath.Dir(path),
+			im,
 		)
+
+		matches, err := filepath.Glob(fullPath)
 		if err != nil {
-			return err
+			return fmt.Errorf("invalid path %q: %w", fullPath, err)
 		}
+
+		for _, match := range matches {
+			err = Traverse(recipes, match)
+			if err != nil {
+				return err
+			}
+		}
+
 	}
 
 	return nil
