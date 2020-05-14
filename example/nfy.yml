@@ -11,10 +11,15 @@ htop:
     deps:
       - brew
 wget:
-  install: "apt-get install -y wget"
   check: "wget -h"
-  deps:
-    - apt
+  install_apt:
+    script: "apt-get install -y wget"
+    deps:
+      - brew
+  install_brew:
+    script: "brew install htop"
+    deps:
+      - brew
 vim:
   deps:
     - github.com/cdr/nfy@exp:vim
