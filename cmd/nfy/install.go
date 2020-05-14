@@ -2,14 +2,15 @@ package main
 
 import (
 	"bytes"
-	"context"
-	"github.com/fatih/color"
-	"github.com/spf13/pflag"
-	"go.coder.com/cli"
 	"cdr.dev/nfy/internal/clog"
 	"cdr.dev/nfy/internal/graph"
 	"cdr.dev/nfy/internal/parse"
 	"cdr.dev/nfy/internal/runner"
+	"context"
+	"fmt"
+	"github.com/fatih/color"
+	"github.com/spf13/pflag"
+	"go.coder.com/cli"
 	"os"
 	"path/filepath"
 	"time"
@@ -102,7 +103,9 @@ func (a installCmd) Run(fl *pflag.FlagSet) {
 					Stdout: &outBuf,
 				}
 
-				prefix := color.New(color.Bold).Sprint(installer.Name)
+				prefix := color.New(color.Bold).Sprint(
+					fmt.Sprintf("%-16s", installer.FQDN(installer.Recipe)),
+					)
 
 				start := time.Now()
 				if installer.Recipe.Check != "" {
@@ -121,7 +124,7 @@ func (a installCmd) Run(fl *pflag.FlagSet) {
 				err := installer.Install(out)
 				if err != nil {
 					outBuf.WriteTo(os.Stdout)
-					clog.Fatal("%s\tinstall failed: %v (%v)", prefix, err, time.Since(start))
+					return fmt.Errorf("%s\tinstall failed: %v (%v)", prefix, err, time.Since(start))
 				}
 				var noCheckMessage string
 				if installer.Recipe.Check == "" {

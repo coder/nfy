@@ -36,8 +36,6 @@ type Recipe struct {
 
 type localLoader struct {
 	name string
-	// parent is provided for error reporting.
-	parent string
 	ind    RecipeIndex
 }
 
@@ -48,7 +46,7 @@ func (l *localLoader) Name() string {
 func (l *localLoader) Load(_ context.Context) (*Recipe, error) {
 	r, ok := l.ind[l.name]
 	if !ok {
-		return nil, fmt.Errorf("%s -> %s: %q not found locally", l.parent, l.name, l.name)
+		return nil, fmt.Errorf("%s: recipe not found locally", l.name)
 	}
 	return &r, nil
 }

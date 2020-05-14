@@ -28,7 +28,6 @@ func evalDepList(parent string, remoteConfig RemoteConfig, deps []string, ind Re
 		}
 		// TODO: support remote dependencies.
 		ls = append(ls, &localLoader{
-			parent: parent,
 			name:   dep,
 			ind:    ind,
 		})

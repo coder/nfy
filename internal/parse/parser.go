@@ -17,6 +17,13 @@ type Installer struct {
 	Dependencies []string
 }
 
+func (i Installer) FQDN(r Recipe) string {
+	if i.Name == "" {
+		return r.Name
+	}
+	return r.Name + " [" + i.Name + "]"
+}
+
 type Recipe struct {
 	Name       string
 	Check      string
@@ -88,7 +95,7 @@ func parseRecipe(key string, val yaml.MapSlice) (Recipe, error) {
 					}
 				case "script":
 					installer.Script, ok = it.Value.(string)
-					if !ok{
+					if !ok {
 						return r, expectError("script", "string")
 					}
 				default:

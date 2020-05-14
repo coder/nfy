@@ -38,6 +38,14 @@ func FromParseRecipes(rs []parse.Recipe, repo string) []Installer {
 		for _, installer := range recipe.Installers {
 			is = append(is, Installer{recipe, repo, installer})
 		}
+		if len(recipe.Installers) == 0 && recipe.Check != "" {
+			// Add a check-only installer if none provided.
+			is = append(is, Installer{
+				Recipe:    recipe,
+				Repo:      repo,
+				Installer: parse.Installer{},
+			})
+		}
 	}
 	return is
 }

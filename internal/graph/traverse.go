@@ -1,11 +1,12 @@
 package graph
 
 import (
-	"cdr.dev/nfy/internal/runner"
 	"context"
 	"fmt"
 	"sort"
 	"strings"
+
+	"cdr.dev/nfy/internal/runner"
 )
 
 type TraverseFn func(r runner.Installer) error
@@ -39,41 +40,74 @@ func (ri RecipeIndex) sortedSlice() []Recipe {
 // Traverse traverses all recipes in the graph. It will only present recipes that it has presented all dependencies for.
 func (ri RecipeIndex) Traverse(ctx context.Context, fn TraverseFn) error {
 	for name, r := range ri {
-		err := r.Traverse(ctx, fn)
+		err := r.Traverse(ctx, name, fn)
 		if err != nil {
-			return fmt.Errorf("load %s: %w", name, err)
+			return err
 		}
 	}
 	return nil
 }
 
-func (r Recipe) tryInstaller(ctx context.Context, ins Installer, fn TraverseFn) error {
+type depError struct {
+	ins    Installer
+	parent string
+	err    error
+}
+
+func (l *depError) Error() string {
+	return l.err.Error()
+}
+
+func (r Recipe) tryInstaller(ctx context.Context, parent string, ins Installer, fn TraverseFn) *depError {
 	for _, dep := range ins.Dependencies {
 		r, err := dep.Load(ctx)
 		if err != nil {
-			return fmt.Errorf("%s: %w", ins.Name, err)
+			return &depError{
+				ins:    ins,
+				parent: parent,
+				err:    err,
+			}
 		}
-		err = r.Traverse(ctx, fn)
+		err = r.Traverse(ctx, parent, fn)
 		if err != nil {
-			return fmt.Errorf("%s: %w", ins.Name, err)
+			return &depError{
+				ins:    ins,
+				parent: parent,
+				err:    err,
+			}
 		}
 	}
 	return nil
+}
+
+type depErrors []*depError
+
+func (d depErrors) Error() string {
+	var s strings.Builder
+	for _, err := range d {
+		if ds, ok := err.err.(depErrors); ok {
+			fmt.Fprintf(&s, ds.Error())
+			continue
+		}
+		// Show dependency.
+		fmt.Fprintf(&s, "\n\t%s -> %v", err.parent, strings.TrimSpace(err.Error()))
+	}
+	return s.String()
 }
 
 // Traverse calls fn for each recipe in it's graph until fn returns false or there are no more entries.
 // Traverse is depth-first.
 // It is eventually called against the Recipe itself.
-func (r Recipe) Traverse(ctx context.Context, fn TraverseFn) error {
+func (r Recipe) Traverse(ctx context.Context, parent string, fn TraverseFn) error {
 	var (
 		installer Installer
-		errs      []error
-		lastErr   error
+		errs      depErrors
+		lastErr   *depError
 	)
 
 	// Try each installer and use the one that works.
 	for _, installer = range r.Installers {
-		err := r.tryInstaller(ctx, installer, fn)
+		err := r.tryInstaller(ctx, parent, installer, fn)
 		lastErr = err
 		errs = append(errs, err)
 		if err == nil {
@@ -82,11 +116,7 @@ func (r Recipe) Traverse(ctx context.Context, fn TraverseFn) error {
 	}
 
 	if lastErr != nil {
-		var errStr strings.Builder
-		for _, err := range errs {
-			fmt.Fprintf(&errStr, "\n\t%+v", err.Error())
-		}
-		return fmt.Errorf("%s", errStr.String())
+		return errs
 	}
 
 	return fn(installer.Runner)
