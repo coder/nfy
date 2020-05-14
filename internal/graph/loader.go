@@ -100,7 +100,7 @@ func (l *remoteLoader) Load(ctx context.Context) (*Recipe, error) {
 	defer os.RemoveAll(dir)
 
 	if l.target.Tag == "" {
-		l.target.Tag = "HEAD"
+		l.target.Tag = "master"
 	}
 
 	clog.Info("cloning %v", l.raw)
