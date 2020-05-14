@@ -20,6 +20,3 @@ wget:
     script: "brew install htop"
     deps:
       - brew
-vim:
-  deps:
-    - github.com/cdr/nfy@exp:vim
