@@ -23,10 +23,15 @@ type RecipeLoader interface {
 	Name() string
 }
 
+type Installer struct {
+	Name         string
+	Runner       runner.Installer
+	Dependencies []RecipeLoader
+}
+
 // Recipe represents a loaded recipe.
 type Recipe struct {
-	runner.Recipe
-	Dependencies []RecipeLoader
+	Installers []Installer
 }
 
 type localLoader struct {
@@ -129,13 +134,7 @@ func (l *remoteLoader) Load(ctx context.Context) (*Recipe, error) {
 		return nil, fmt.Errorf("repo does not have target %v", l.target.Target)
 	}
 
-	deps, err := evalDepList(l.raw, l.config, targetGraph.Recipe.Dependencies, grp)
-	if err != nil {
-		return nil, err
-	}
-
 	return &Recipe{
-		Recipe:       targetGraph.Recipe,
-		Dependencies: deps,
+		Installers: targetGraph.Installers,
 	}, nil
 }

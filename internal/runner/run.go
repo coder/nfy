@@ -2,9 +2,10 @@ package runner
 
 import (
 	"fmt"
-	"cdr.dev/nfy/internal/parse"
 	"io"
 	"os/exec"
+
+	"cdr.dev/nfy/internal/parse"
 )
 
 func defaultShell() string {
@@ -16,49 +17,53 @@ type Output struct {
 	Stdout io.Writer
 }
 
-type Recipe struct {
-	parse.Recipe
+type Installer struct {
+	Recipe parse.Recipe
 	Repo string
+	parse.Installer
 }
 
-func (r Recipe) FullName() string {
-	if r.Repo == "" {
-		return r.Name
+func (i Installer) FullName() string {
+	if i.Repo == "" {
+		return i.Recipe.Name
 	}
-	return r.Repo + ":" + r.Name
+	return i.Repo + ":" + i.Recipe.Name
 }
 
 // FromParseRecipes converts parse.Recipes into Recipes.
-func FromParseRecipes(rs []parse.Recipe, repo string) []Recipe {
-	var rr []Recipe
-	for _, r := range rs {
-		rr = append(rr, Recipe{r, repo})
+// It generates a new runner.Recipe for each Installer.
+func FromParseRecipes(rs []parse.Recipe, repo string) []Installer {
+	var is []Installer
+	for _, recipe := range rs {
+		for _, installer := range recipe.Installers {
+			is = append(is, Installer{recipe, repo, installer})
+		}
 	}
-	return rr
+	return is
 }
 
-func (r Recipe) Check(out Output) error {
-	cmd := exec.Command(defaultShell(), "-c", r.Recipe.Check)
+func (i Installer) Check(out Output) error {
+	cmd := exec.Command(defaultShell(), "-c", i.Recipe.Check)
 	cmd.Stderr = out.Stderr
 	cmd.Stdout = out.Stdout
 	return cmd.Run()
 }
 
-func (r Recipe) CheckOnly() bool {
-	return r.Recipe.Check != "" && r.Recipe.Install == ""
+func (i Installer) CheckOnly() bool {
+	return i.Recipe.Check != "" && len(i.Recipe.Installers) == 0
 }
 
 // DependencyOnly returns whether this recipe only proxies dependencies.
-func (r Recipe) DependencyOnly() bool {
-	return r.Recipe.Check == "" && r.Recipe.Install == ""
+func (i Installer) DependencyOnly() bool {
+	return i.Recipe.Check == "" && len(i.Recipe.Installers) == 0
 }
 
-func (r Recipe) Install(out Output) error {
-	if r.Recipe.Install == "" {
+func (i Installer) Install(out Output) error {
+	if i.Script == "" {
 		return fmt.Errorf("no installer provided")
 	}
 
-	cmd := exec.Command(defaultShell(), "-c", r.Recipe.Install)
+	cmd := exec.Command(defaultShell(), "-c", i.Script)
 	cmd.Stderr = out.Stderr
 	cmd.Stdout = out.Stdout
 	return cmd.Run()

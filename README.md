@@ -250,17 +250,20 @@ deps:
 ```
 
 will obviously fail because apt-get is not installed. Instead, you should _overload_ the target with multiple
-installs. For example:
+installers. For example:
 
 ```yaml
 htop:
-    check: "htop -h"
-    install_apt:  "apt-get install -h htop"
-        deps:
-            - apt
-    install_brew: "brew install htop"
-        deps:
-            - brew
+  check: "htop -h"
+  install_apt:
+    script: "apt-get install -y htop"
+    deps:
+      - apt
+  install_brew:
+    script: "brew install htop"
+    deps:
+      - brew
+
 ```
 
 We cannot simply provide multiple `install` directives because it is illegal YAML for keys to conflict.
@@ -271,6 +274,9 @@ The suffix is nice for debugging nfy execution, too.
 
 - Targetting multiple operating systems
 - Tolerating different dependencies (e.g using "curl" instead of "wget")
+
+#### Docker
+The first target is always used in Docker images. The first is assumed the default.
 
 ### Locking
 

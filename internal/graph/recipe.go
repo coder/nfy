@@ -2,8 +2,9 @@ package graph
 
 import (
 	"fmt"
-	"cdr.dev/nfy/internal/runner"
 	"strings"
+
+	"cdr.dev/nfy/internal/runner"
 )
 
 type RecipeIndex map[string]Recipe
@@ -41,23 +42,23 @@ type RemoteConfig struct {
 }
 
 // Generate produces a graph for each recipe.
-func Generate(recipes []runner.Recipe, rconfig RemoteConfig) (RecipeIndex, error) {
-	localIndex := make(RecipeIndex, len(recipes))
+func Generate(installers []runner.Installer, rconfig RemoteConfig) (RecipeIndex, error) {
+	localIndex := make(RecipeIndex, len(installers))
 
-	for _, recipe := range recipes {
-		deps, err := evalDepList(recipe.Recipe.Name, rconfig, recipe.Recipe.Dependencies, localIndex)
+	for _, installer := range installers {
+		// We always append to the exist recipe's installers.
+		r, _ := localIndex[installer.Recipe.Name]
+
+		loaders, err := evalDepList(installer.FullName(), rconfig, installer.Dependencies, localIndex)
 		if err != nil {
 			return nil, err
 		}
-		_, ok := localIndex[recipe.Name]
-		if ok {
-			return nil, fmt.Errorf("%s is declared multiple times", recipe.Name)
-		}
-		// Store recipe.
-		localIndex[recipe.Name] = Recipe{
-			Recipe:       recipe,
-			Dependencies: deps,
-		}
+		r.Installers = append(r.Installers, Installer{
+			Runner:       installer,
+			Name:         installer.Name,
+			Dependencies: loaders,
+		})
+		localIndex[installer.Recipe.Name] = r
 	}
 
 	return localIndex, nil
