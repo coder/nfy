@@ -2,14 +2,15 @@ package main
 
 import (
 	"bytes"
-	"context"
-	"github.com/fatih/color"
-	"github.com/spf13/pflag"
-	"go.coder.com/cli"
 	"cdr.dev/nfy/internal/clog"
 	"cdr.dev/nfy/internal/graph"
 	"cdr.dev/nfy/internal/parse"
 	"cdr.dev/nfy/internal/runner"
+	"context"
+	"fmt"
+	"github.com/fatih/color"
+	"github.com/spf13/pflag"
+	"go.coder.com/cli"
 	"os"
 	"path/filepath"
 	"time"
@@ -45,6 +46,7 @@ func localGraph(targets []string) graph.RecipeIndex {
 			panic(err)
 		}
 	}
+	clog.Debug("using path: %v", path)
 
 	var parsedRecipes []parse.Recipe
 	root := filepath.Join(path, "nfy.yml")
@@ -57,22 +59,25 @@ func localGraph(targets []string) graph.RecipeIndex {
 	if err != nil {
 		clog.Fatal("%+v", err)
 	}
-	// Replace the graphIndex with a filtered version if targets are specified.
-	if targets != nil {
-		graphIndex = func() graph.RecipeIndex {
-			newIndex := make(graph.RecipeIndex)
-			for _, v := range targets {
-				recipe, ok := graphIndex[v]
-				if !ok {
-					clog.Fatal("%v not found", v)
-				}
-				newIndex[v] = recipe
-			}
-			return newIndex
-		}()
+
+	// If no specify targets are specified, evaluate all.
+	if targets == nil {
+		return graphIndex
 	}
 
-	return graphIndex
+	// Replace the graphIndex with a filtered version if targets are specified.
+	return func() graph.RecipeIndex {
+		newIndex := make(graph.RecipeIndex)
+		for _, v := range targets {
+			recipe, ok := graphIndex[v]
+			if !ok {
+				graphIndex.Dump()
+				clog.Fatal("no recipe %q not found", v)
+			}
+			newIndex[v] = recipe
+		}
+		return newIndex
+	}()
 }
 
 func (a installCmd) Run(fl *pflag.FlagSet) {
@@ -85,9 +90,9 @@ func (a installCmd) Run(fl *pflag.FlagSet) {
 	err := graphIndex.Traverse(
 		a.ctx,
 		graph.TraverseOnce(
-			func(r runner.Recipe) error {
+			func(installer runner.Installer) error {
 				totalCounter++
-				if r.DependencyOnly() || r.BuildOnly {
+				if installer.DependencyOnly() || installer.Recipe.BuildOnly {
 					return nil
 				}
 
@@ -98,11 +103,13 @@ func (a installCmd) Run(fl *pflag.FlagSet) {
 					Stdout: &outBuf,
 				}
 
-				prefix := color.New(color.Bold).Sprint(r.Name)
+				prefix := color.New(color.Bold).Sprint(
+					fmt.Sprintf("%-16s", installer.FQDN(installer.Recipe)),
+					)
 
 				start := time.Now()
-				if r.Recipe.Check != "" {
-					err := r.Check(out)
+				if installer.Recipe.Check != "" {
+					err := installer.Check(out)
 					if a.showOutput {
 						clog.Info("%s\t --- begin check output", prefix)
 						outBuf.WriteTo(os.Stdout)
@@ -114,13 +121,13 @@ func (a installCmd) Run(fl *pflag.FlagSet) {
 					}
 				}
 
-				err := r.Install(out)
+				err := installer.Install(out)
 				if err != nil {
 					outBuf.WriteTo(os.Stdout)
-					clog.Fatal("%s\tinstall failed: %v (%v)", prefix, err, time.Since(start))
+					return fmt.Errorf("%s\tinstall failed: %v (%v)", prefix, err, time.Since(start))
 				}
 				var noCheckMessage string
-				if r.Recipe.Check == "" {
+				if installer.Recipe.Check == "" {
 					noCheckMessage = "no check, "
 				}
 				clog.Success("%s\t%sinstalled (%v)", prefix, noCheckMessage, time.Since(start))
@@ -136,7 +143,7 @@ func (a installCmd) Run(fl *pflag.FlagSet) {
 		),
 	)
 	if err != nil {
-		clog.Fatal("traverse failed: %w", err)
+		clog.Fatal("%+v", err)
 	}
 	clog.Success("total: %v, installed: %v", totalCounter, installCounter)
 }

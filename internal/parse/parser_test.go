@@ -30,9 +30,48 @@ wget:
 			want: Result{
 				Recipes: []Recipe{
 					{
-						Name:    "wget",
-						Install: "apt-get install -y wget",
-						Check:   "wget -h",
+						Name: "wget",
+						Installers: []Installer{
+							{
+								Script: "apt-get install -y wget",
+							},
+						},
+						Check: "wget -h",
+					},
+				},
+			},
+		},
+		{
+			name: "OverloadedTarget",
+			body: `
+wget:
+  check: "wget -h"
+  install_apt:
+    script: "apt install wget"
+    deps:
+      - apt
+  install_brew:
+    script: "brew install wget"
+    deps:
+      - brew
+`,
+			want: Result{
+				Recipes: []Recipe{
+					{
+						Name: "wget",
+						Installers: []Installer{
+							{
+								Name:         "apt",
+								Script:       "apt install wget",
+								Dependencies: []string{"apt"},
+							},
+							{
+								Name:         "brew",
+								Script:       "brew install wget",
+								Dependencies: []string{"brew"},
+							},
+						},
+						Check: "wget -h",
 					},
 				},
 			},

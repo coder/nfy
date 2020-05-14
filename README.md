@@ -1,3 +1,27 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [nfy](#nfy)
+  - [Install](#install)
+  - [Introduction](#introduction)
+    - [The Problem](#the-problem)
+    - [The Goal](#the-goal)
+  - [Basic Example](#basic-example)
+    - [Build Container Image](#build-container-image)
+      - [Advanced Example](#advanced-example)
+  - [Parallelism](#parallelism)
+  - [Recipes](#recipes)
+  - [Code Structure](#code-structure)
+    - [Import Statements](#import-statements)
+  - [Dependencies](#dependencies)
+    - [Target Evaluation](#target-evaluation)
+    - [Target Overloading](#target-overloading)
+      - [Use Cases](#use-cases)
+    - [Locking](#locking)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # nfy
 
 `nfy` is an **experimental** configuration management that aims to u**n**i**fy** the concept of the `Dockerfile`,
@@ -9,7 +33,7 @@ There are no compatibility or reliability guarantees until we're v1.0.0.
 
 ## Install
 ```
-go get cdr.dev/nfy
+go get -u cdr.dev/nfy/cmd/nfy
 ```
 
 ## Introduction
@@ -179,7 +203,6 @@ apt-get:
 
 ## Code Structure
 
-
 ### Import Statements
 An `import` directive loads in recipes from a file. The configuration is evaluated in order, so the list of imports
 must be before the imported target is referenced. Example:
@@ -214,6 +237,46 @@ A target can be provided in one of three formats:
 
 - `wget` references a local target somewhere in the source tree
 - `github.com/user/repo:wget` references a remote target named `wget` hosted on git.
+
+### Target Overloading
+What if you want to install `htop` in your Macbook or Linux server?
+
+```yaml
+htop:
+    check: "htop -h"
+    install: "apt-get install -h htop"
+deps:
+    - apt-get
+```
+
+will obviously fail because apt-get is not installed. Instead, you should _overload_ the target with multiple
+installers. For example:
+
+```yaml
+htop:
+  check: "htop -h"
+  install_apt:
+    script: "apt-get install -y htop"
+    deps:
+      - apt
+  install_brew:
+    script: "brew install htop"
+    deps:
+      - brew
+
+```
+
+We cannot simply provide multiple `install` directives because it is illegal YAML for keys to conflict.
+
+The suffix is nice for debugging nfy execution, too.
+
+#### Use Cases
+
+- Targetting multiple operating systems
+- Tolerating different dependencies (e.g using "curl" instead of "wget")
+
+#### Docker
+The first target is always used in Docker images. The first is assumed the default.
 
 ### Locking
 

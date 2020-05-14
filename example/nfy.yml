@@ -1,10 +1,15 @@
 import:
-  - "apt.yml"
+  - "pkg.yml"
 htop:
-  install: "apt-get install -y htop"
   check: "htop -h"
-  deps:
-    - apt
+  install_apt:
+    script: "apt-get install -y htop"
+    deps:
+      - apt
+  install_brew:
+    script: "brew install htop"
+    deps:
+      - brew
 wget:
   install: "apt-get install -y wget"
   check: "wget -h"

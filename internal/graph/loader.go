@@ -23,16 +23,19 @@ type RecipeLoader interface {
 	Name() string
 }
 
+type Installer struct {
+	Name         string
+	Runner       runner.Installer
+	Dependencies []RecipeLoader
+}
+
 // Recipe represents a loaded recipe.
 type Recipe struct {
-	runner.Recipe
-	Dependencies []RecipeLoader
+	Installers []Installer
 }
 
 type localLoader struct {
 	name string
-	// parent is provided for error reporting.
-	parent string
 	ind    RecipeIndex
 }
 
@@ -43,7 +46,7 @@ func (l *localLoader) Name() string {
 func (l *localLoader) Load(_ context.Context) (*Recipe, error) {
 	r, ok := l.ind[l.name]
 	if !ok {
-		return nil, fmt.Errorf("%s -> %s: %q not found locally", l.parent, l.name, l.name)
+		return nil, fmt.Errorf("%s: recipe not found locally", l.name)
 	}
 	return &r, nil
 }
@@ -129,13 +132,7 @@ func (l *remoteLoader) Load(ctx context.Context) (*Recipe, error) {
 		return nil, fmt.Errorf("repo does not have target %v", l.target.Target)
 	}
 
-	deps, err := evalDepList(l.raw, l.config, targetGraph.Recipe.Dependencies, grp)
-	if err != nil {
-		return nil, err
-	}
-
 	return &Recipe{
-		Recipe:       targetGraph.Recipe,
-		Dependencies: deps,
+		Installers: targetGraph.Installers,
 	}, nil
 }

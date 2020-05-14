@@ -10,3 +10,5 @@ apt:
   deps:
     - apt-get
     - apt-update
+brew:
+  check: "brew -h"

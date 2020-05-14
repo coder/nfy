@@ -2,19 +2,34 @@ package parse
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
-type Recipe struct {
+type Installer struct {
+	// Name identifies the installer when multiple are provided.
 	Name         string
-	Install      string
-	Check        string
-	BuildOnly    bool
-	Comment      string
+	Script       string
 	Dependencies []string
+}
+
+func (i Installer) FQDN(r Recipe) string {
+	if i.Name == "" {
+		return r.Name
+	}
+	return r.Name + " [" + i.Name + "]"
+}
+
+type Recipe struct {
+	Name       string
+	Check      string
+	BuildOnly  bool
+	Comment    string
+	Installers []Installer
 }
 
 type Result struct {
@@ -23,41 +38,101 @@ type Result struct {
 }
 
 func expectError(field, typ string) error {
-	return fmt.Errorf("expected %q to be string", field, typ)
+	return fmt.Errorf("expected %q to be %q", field, typ)
+}
+
+func parseDependencies(v interface{}) ([]string, error) {
+	deps, ok := v.([]interface{})
+	if !ok {
+		return nil, expectError("deps", "array")
+	}
+	var ds []string
+	for _, dep := range deps {
+		ds = append(ds, fmt.Sprint(dep))
+	}
+	return ds, nil
 }
 
 func parseRecipe(key string, val yaml.MapSlice) (Recipe, error) {
+	// overloaded is true
+	var overloaded bool
+
 	var r Recipe
 	var ok bool
 	for _, it := range val {
-		switch fmt.Sprint(it.Key) {
-		case "install":
-			r.Install, ok = it.Value.(string)
-			if !ok {
-				return r, expectError("install", "string")
+		key := fmt.Sprint(it.Key)
+		switch {
+		case strings.HasPrefix(key, "install"):
+			var installer Installer
+			const splitChar = "_"
+			if tok := strings.Split(key, splitChar); len(tok) == 2 {
+				overloaded = true
+				installer.Name = tok[1]
 			}
-		case "check":
+
+			// Simple path
+			if !overloaded {
+				installer.Script, ok = it.Value.(string)
+				if !ok {
+					return r, expectError("install", "string")
+				}
+				r.Installers = append(r.Installers, installer)
+				continue
+			}
+
+			// Parse out overloaded dependencies.
+			args, ok := it.Value.(yaml.MapSlice)
+			if !ok {
+				return r, expectError(key+".deps", "MapSlice")
+			}
+			for _, it := range args {
+				switch it.Key {
+				case "deps":
+					var err error
+					installer.Dependencies, err = parseDependencies(it.Value)
+					if err != nil {
+						return r, err
+					}
+				case "script":
+					installer.Script, ok = it.Value.(string)
+					if !ok {
+						return r, expectError("script", "string")
+					}
+				default:
+					return r, fmt.Errorf("overloaded target has unexpected key %q", it.Key)
+				}
+			}
+			r.Installers = append(r.Installers, installer)
+
+		case key == "check":
 			r.Check, ok = it.Value.(string)
 			if !ok {
 				return r, expectError("check", "string")
 			}
-		case "build_only":
+		case key == "build_only":
 			r.BuildOnly, ok = it.Value.(bool)
 			if !ok {
 				return r, expectError("build_only", "bool")
 			}
-		case "comment":
+		case key == "comment":
 			r.Comment, ok = it.Value.(string)
 			if !ok {
 				return r, expectError("comment", "string")
 			}
-		case "deps":
-			deps, ok := it.Value.([]interface{})
-			if !ok {
-				return r, expectError("deps", "array")
-			}
-			for _, dep := range deps {
-				r.Dependencies = append(r.Dependencies, fmt.Sprint(dep))
+		case key == "deps":
+			switch {
+			case len(r.Installers) > 1:
+				return r, fmt.Errorf("if the target is overloaded, deps must be provided per installer")
+			default:
+				var err error
+				// Add an inert install. This is a depedency proxy.
+				if len(r.Installers) == 0 {
+					r.Installers = append(r.Installers, Installer{})
+				}
+				r.Installers[0].Dependencies, err = parseDependencies(it.Value)
+				if err != nil {
+					return r, err
+				}
 			}
 		default:
 			return r, fmt.Errorf("unexpected directive %q", it.Key)
