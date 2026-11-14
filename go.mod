@@ -9,5 +9,5 @@ require (
 	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/spf13/pflag v1.0.3
 	go.coder.com/cli v0.4.0
-	gopkg.in/yaml.v2 v2.2.5
+	gopkg.in/yaml.v2 v2.2.8
 )
